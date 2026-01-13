@@ -1,0 +1,121 @@
+# docker-compose.yml
+# Stack complète MLOps locale
+
+version: '3.8'
+
+services:
+  # ============================================
+  # API de Prédiction (Flask)
+  # ============================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stock-prediction-api
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MODEL_PATH=/app/models
+      - DEBUG=false
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - mlops-network
+
+  # ============================================
+  # MLflow Tracking Server
+  # ============================================
+  mlflow:
+    image: python:3.11-slim
+    container_name: mlflow-server
+    command: >
+      bash -c "pip install --quiet mlflow psycopg2-binary &&
+               mlflow server
+               --host 0.0.0.0
+               --port 5000
+               --backend-store-uri sqlite:///mlflow/mlflow.db
+               --default-artifact-root /mlflow/artifacts"
+    ports:
+      - "5001:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - mlops-network
+
+  # ============================================
+  # Prometheus (Monitoring)
+  # ============================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - mlops-network
+
+  # ============================================
+  # Grafana (Dashboards)
+  # ============================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - mlops-network
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  mlflow_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  mlops-network:
+    driver: bridge

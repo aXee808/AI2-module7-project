@@ -1,0 +1,89 @@
+# kubernetes/deployment.yaml
+# Deployment de l'API de prédiction
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stock-prediction-api
+  namespace: stock-prediction
+  labels:
+    app: stock-prediction
+    component: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stock-prediction
+      component: api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: stock-prediction
+        component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: stock-prediction-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+      containers:
+      - name: api
+        image: username/stock-prediction:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "5000"
+        - name: MODEL_PATH
+          value: "/app/models"
+        - name: DEBUG
+          value: "false"
+        envFrom:
+        - configMapRef:
+            name: stock-prediction-config
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}

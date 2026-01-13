@@ -1,0 +1,79 @@
+# kubernetes/service.yaml
+# Service pour exposer l'API
+apiVersion: v1
+kind: Service
+metadata:
+  name: stock-prediction-service
+  namespace: stock-prediction
+  labels:
+    app: stock-prediction
+spec:
+  type: ClusterIP
+  selector:
+    app: stock-prediction
+    component: api
+  ports:
+  - port: 80
+    targetPort: 5000
+    protocol: TCP
+    name: http
+---
+# kubernetes/configmap.yaml
+# Configuration de l'application
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stock-prediction-config
+  namespace: stock-prediction
+data:
+  LOG_LEVEL: "INFO"
+  WORKERS: "2"
+---
+# kubernetes/serviceaccount.yaml
+# ServiceAccount pour l'application
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: stock-prediction-sa
+  namespace: stock-prediction
+---
+# kubernetes/hpa.yaml
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: stock-prediction-hpa
+  namespace: stock-prediction
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: stock-prediction-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15

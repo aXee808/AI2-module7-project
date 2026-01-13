@@ -1,0 +1,17 @@
+# Chart.yaml - Metadata du chart Helm
+apiVersion: v2
+name: stock-prediction
+description: Chart Helm pour deployer l'API de prediction MLOps
+version: 1.0.0
+appVersion: "1.0.0"
+type: application
+
+# Mots-cles pour la recherche
+keywords:
+  - mlops
+  - machine-learning
+  - api
+
+# Mainteneur
+maintainers:
+  - name: MLOps Team

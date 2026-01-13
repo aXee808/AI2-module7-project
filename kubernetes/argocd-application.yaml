@@ -1,0 +1,46 @@
+# kubernetes/argocd-application.yaml
+# Application ArgoCD pour le déploiement GitOps
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: stock-prediction
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  # Source des manifests
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/mlops-stock-prediction.git
+    targetRevision: HEAD
+    path: kubernetes
+
+  # Destination
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: stock-prediction
+
+  # Politique de synchronisation
+  syncPolicy:
+    automated:
+      prune: true        # Supprimer les ressources obsolètes
+      selfHeal: true     # Corriger les drifts automatiquement
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Ignorer certaines différences (ex: replicas gérés par HPA)
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /spec/replicas

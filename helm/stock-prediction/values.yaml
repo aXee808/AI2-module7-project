@@ -1,0 +1,58 @@
+# values.yaml - Configuration du chart Helm (version simplifiee)
+# ============================================================================
+# Ce fichier contient les valeurs par defaut. Vous pouvez les surcharger avec:
+#   helm install my-release ./helm/stock-prediction --set replicaCount=3
+#   helm install my-release ./helm/stock-prediction -f my-values.yaml
+# ============================================================================
+
+# Nombre de replicas (pods)
+replicaCount: 2
+
+# Configuration de l'image Docker
+image:
+  repository: username/stock-prediction
+  tag: latest
+  pullPolicy: Always
+
+# Configuration du Service Kubernetes
+service:
+  type: ClusterIP      # ClusterIP, NodePort, ou LoadBalancer
+  port: 80             # Port expose par le service
+  targetPort: 5000     # Port du container
+
+# Ressources CPU/Memoire
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "200m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# Health Checks
+livenessProbe:
+  path: /health
+  port: 5000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  path: /health
+  port: 5000
+  initialDelaySeconds: 10
+  periodSeconds: 5
+
+# Variables d'environnement de l'application
+config:
+  PORT: "5000"
+  MODEL_PATH: "/app/models"
+  DEBUG: "false"
+  LOG_LEVEL: "INFO"
+  WORKERS: "2"
+
+# Labels et annotations supplementaires (optionnel)
+podLabels: {}
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "5000"
+  prometheus.io/path: "/metrics"

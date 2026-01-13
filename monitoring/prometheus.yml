@@ -1,0 +1,57 @@
+# Prometheus Configuration
+# =======================
+# Configuration pour la collecte des métriques du projet MLOps
+
+global:
+  scrape_interval: 15s          # Fréquence de collecte par défaut
+  evaluation_interval: 15s       # Fréquence d'évaluation des règles
+  external_labels:
+    monitor: 'mlops-monitor'
+
+# Règles d'alerte (optionnel)
+# rule_files:
+#   - "alert_rules.yml"
+
+# Configuration des endpoints à scraper
+scrape_configs:
+  # ===========================================
+  # Prometheus lui-même
+  # ===========================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # ===========================================
+  # API Flask - Métriques de l'application
+  # ===========================================
+  - job_name: 'mlops-api'
+    static_configs:
+      - targets: ['api:5000']
+        labels:
+          service: 'stock-prediction-api'
+          environment: 'docker'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # ===========================================
+  # MLflow (si expose des métriques)
+  # ===========================================
+  - job_name: 'mlflow'
+    static_configs:
+      - targets: ['mlflow:5000']
+        labels:
+          service: 'mlflow'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    # MLflow n'expose pas de métriques par défaut
+    # Ce job peut échouer silencieusement
+
+# Configuration d'alerting (optionnel)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
