@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: titanic-api
+  labels:
+    app: titanic-api
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: titanic-api
+  template:
+    metadata:
+      labels:
+        app: titanic-api
+    spec:
+      containers:
+      - name: titanic-api
+        image: registry-1.docker.io/axee808/titanic-api:v3
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: titanic-config
+        - secretRef:
+            name: titanic-secrets
+      volumes:
+      - name: titanic-storage
+        persistentVolumeClaim:
+          claimName: titanic-pvc

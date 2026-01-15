@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: titanic-config
+data:
+  AWS_REGION_NAME: eu-west-3
+  AWS_ENDPOINT_URL: http://minio:9000
+  AWS_BUCKET_MEDIA: data
