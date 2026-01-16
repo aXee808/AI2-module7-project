@@ -44,6 +44,8 @@ Les étapes du projet se décline comme suit :
 │   ├── secret.yaml
 │   ├── deployment.yaml
 │   └── pod.yaml
+├── tests
+│   └── test_titanic_api.py
 ├── rapport
 │   └── rapport.pdf
 ├── README.md
