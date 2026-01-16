@@ -19,10 +19,13 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build the Docker image
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image and push
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: ./Dockerfile
-        push: true
+        file: Dockerfile
         tags: axee808/titanic-api:v3
+        push: true
