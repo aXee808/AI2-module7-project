@@ -2,7 +2,8 @@ name: Docker Image Build
 
 on:
   push:
-    branches: [ "main" ]
+    paths:
+    - 'app/**'
 
 jobs:
 
