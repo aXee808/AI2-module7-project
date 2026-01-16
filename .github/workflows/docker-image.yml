@@ -26,5 +26,5 @@ jobs:
       with:
         context: .
         file: ./Dockerfile
-        tags: axee808/titanic-api:v3
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:latest
         push: true
