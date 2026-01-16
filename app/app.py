@@ -38,7 +38,7 @@ s3client = boto3.resource(
 
 # declare API
 app = FastAPI()
-print("API loading !")
+print("API Titanic query !")
 
 # load local csv file
 df_titanic = pd.read_csv("./data/titanic.csv")
@@ -59,19 +59,21 @@ async def get_passengers(age_min : int,age_max : int):
 
     return : (json) {'dead_female': integer,'dead_male': integer,'survived_female':integer,'survived_male':integer}
     """
+    try:
+        # select passengers rows between minimum age and maximum age
+        df_select = df_titanic.loc[(df_titanic['Age']>= age_min)&(df_titanic['Age']<=age_max) ,['Survived','Sex']]
 
-    # select passengers rows between minimum age and maximum age
-    df_select = df_titanic.loc[(df_titanic['Age']>= age_min)&(df_titanic['Age']<=age_max) ,['Survived','Sex']]
+        # group passengers by survived status and sex, with count rows
+        df_agg = df_select.groupby(['Survived','Sex']).agg({'Survived': ['count']}).reset_index()
 
-    # group passengers by survived status and sex, with count rows
-    df_agg = df_select.groupby(['Survived','Sex']).agg({'Survived': ['count']}).reset_index()
+        # change columns name
+        df_agg.columns= ['a','b','c']
 
-    # change columns name
-    df_agg.columns= ['a','b','c']
+        # extract & format to json the result
+        result = df_agg['c'].to_list()
+        jsonstr = {'dead_female':result[0],'dead_male':result[1],'survived_female':result[2],'survived_male':result[3]}
 
-    # extract & format to json the result
-    result = df_agg['c'].to_list()
-    jsonstr = {'dead_female':result[0],'dead_male':result[1],'survived_female':result[2],'survived_male':result[3]}
-
-    # return string json format
-    return jsonstr
+        # return string json format
+        return jsonstr
+    except Exception as e:
+        return {"status":f"Error during data query : {e}"}
