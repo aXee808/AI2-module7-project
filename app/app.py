@@ -38,6 +38,7 @@ s3client = boto3.resource(
 
 # declare API
 app = FastAPI()
+print("API loading")
 
 # load local csv file
 df_titanic = pd.read_csv("./data/titanic.csv")
